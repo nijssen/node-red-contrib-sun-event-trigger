@@ -11,9 +11,37 @@ function calculateDelay() {
   return delay;
 }
 
+function formatShortDateTimeWithTZ(date) {
+  try {
+    return new Intl.DateTimeFormat('default', {
+      timeZoneName: 'short',
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(date);
+  } catch (err) {
+    return date.toString();
+  }
+}
+
+function scheduleNext() {
+  const delay = calculateDelay.apply(this);
+  this.timeout = setTimeout(timeoutHandler.bind(this), delay);
+  const nextDate = new Date(Date.now() + delay);
+  this.status({
+    fill: 'blue',
+    shape: 'dot',
+    text: `Next ${this.event}: ${formatShortDateTimeWithTZ(nextDate)}`,
+  });
+}
+
 function timeoutHandler() {
   this.send({payload: {sunEvent: this.event, offset: this.offset}});
-  this.timeout = setTimeout(timeoutHandler.bind(this), calculateDelay.apply(this));
+  scheduleNext.apply(this);
 }
 
 module.exports = function(RED) {
@@ -26,7 +54,7 @@ module.exports = function(RED) {
     node.event = config.event;
     node.offset = config.offset || 0;
     node.injectEventTimesAfterStartup = config.injectEventTimesAfterStartup || false;
-    node.timeout = setTimeout(timeoutHandler.bind(node), calculateDelay.apply(node));
+    scheduleNext.apply(node);
     node.on('input', function(msg, send, done) {
       const offset = Math.round(-calculateDelay.apply(node) / 1000) - node.offset;
       msg.payload = {sunEvent: node.event, offset: offset};

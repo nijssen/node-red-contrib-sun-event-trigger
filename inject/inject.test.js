@@ -52,6 +52,39 @@ describe('sun-event-inject Node', function() {
     });
   });
 
+  it('should show next event in status', function() {
+    const flow = [
+      {
+        id: 'sun-event-inject1',
+        type: 'sun-event-inject',
+        latitude: '45.234754',
+        longitude: '17.456278',
+        event: 'sunset',
+        offset: '0',
+      },
+    ];
+    return new Promise(function(resolve, reject) {
+      helper.load([sunEventInject], flow, function() {
+        try {
+          checkStatus();
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+    function checkStatus() {
+      const node = helper.getNode('sun-event-inject1');
+      const statusCall = node.status.args[0];
+      if (!statusCall) {
+        throw new Error('status was not set');
+      }
+      statusCall[0].should.have.property('fill', 'blue');
+      statusCall[0].should.have.property('shape', 'dot');
+      statusCall[0].text.should.startWith('Next sunset: ');
+    }
+  });
+
   it('should inject message after startup', function() {
     return new Promise(function(resolve, reject) {
       const nameValue = 'Name';

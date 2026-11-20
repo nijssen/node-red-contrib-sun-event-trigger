@@ -69,6 +69,7 @@ module.exports = function(RED) {
     });
     node.on('close', function() {
       clearTimeout(node.timeout);
+      node.status({});
     });
     if (node.injectEventTimesAfterStartup) {
       setTimeout(
